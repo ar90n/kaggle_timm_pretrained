@@ -1,11 +1,11 @@
 import json
 from pathlib import Path
-from typing import Union
+from typing import Union, Optional
 
-def patch(input_dir: Union[Path, str]) -> None:
+def patch(input_dir: Optional[Union[Path, str]] = None) -> None:
     import timm
 
-    input_dir = Path(input_dir)
+    input_dir = Path("../input") if input_dir is None else Path(input_dir)
     for p in input_dir.glob("*"):
         p = Path(p).resolve()
         if not p.name.startswith("timm-pretrained"):
