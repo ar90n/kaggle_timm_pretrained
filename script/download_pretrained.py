@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Set
 import json
 
 from pathlib import Path
@@ -32,21 +32,44 @@ def download_pretrained(dst_dir: Path, urls: Dict[str, str]) -> Dict[str, str]:
     return result
 
 
+def get_folder_name(model_type: str) -> str:
+    return model_type.replace("_", "-")
+
+
+def remove_downloaded_files(
+    urls: Dict[str, str], downloaded_files: Set[str]
+) -> Dict[str, str]:
+    return {n: u for n, u in urls.items() if u.split("/")[-1] not in downloaded_files}
+
+
 def main(dst_dir: Path):
+    has_changed = []
     for model_type, urls in get_model_pretraned_urls():
-        if model_type not in ["vovnet", "resnest", "sknet"]:
-            continue
         typer.echo(f"Start to download {model_type} pretrained files.")
-        dataset_dir = dst_dir / model_type
+        dataset_dir = dst_dir / get_folder_name(model_type)
         dataset_dir.mkdir(exist_ok=True)
 
         pretained_file_dir = dataset_dir / model_type
         pretained_file_dir.mkdir(exist_ok=True)
-        pretained_files = {model_type: download_pretrained(pretained_file_dir, urls)}
 
-        index_file = dataset_dir / "index.json"
-        with index_file.open("w") as fp:
-            json.dump(pretained_files, fp)
+        index_file_path = dataset_dir / "index.json"
+        try:
+            cur_files = json.loads(index_file_path.read_text())[model_type]
+        except FileNotFoundError:
+            cur_files = {}
+
+        downloaded_pretrained_files = set(cur_files.values())
+        new_urls = remove_downloaded_files(urls, downloaded_pretrained_files)
+        if len(new_urls) == 0:
+            continue
+
+        diff_files = download_pretrained(pretained_file_dir, new_urls)
+        index_file = {model_type: {**cur_files, **diff_files}}
+        index_file_path.write_text(json.dumps(index_file))
+        has_changed.append(model_type)
+
+    print("following models are changed")
+    print("\n".join(has_changed))
 
 
 if __name__ == "__main__":
