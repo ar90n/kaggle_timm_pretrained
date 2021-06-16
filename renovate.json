@@ -1,0 +1,16 @@
+{
+    "extends": [
+        "config:base",
+        ":timezone(Asia/Tokyo)"
+    ],
+    "labels": [
+        "dependencies",
+        "renovate"
+    ],
+    "dependencyDashboard": true,
+    "pip": {
+        "automerge": true,
+        "rangeStrategy": "bump"
+    },
+    "schedule": "every weekend"
+}
